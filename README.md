@@ -4,3 +4,11 @@ A standalone ESP32 audio player that streams CD-quality WAV files from an SD car
 ## Required Components & Tools:
 - ESP32-WROOM-32 Development Board
 (Recommended: 8 MB Flash version — stable for Bluetooth A2DP)
+- SD Card Module (SPI-based)
+Compatible with 3.3V logic
+Example: HW-125, Catalex, or any generic SPI SD reader
+- MicroSD Card (FAT32 formatted)
+- SH1107 or SSD1306 128×128 OLED Display (I²C)
+4-pin version (GND, VCC, SDA, SCL)
+- WAV-compatible Bluetooth headphones or speakers
+ESP32 streams via A2DP sink mode
