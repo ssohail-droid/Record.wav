@@ -12,3 +12,6 @@ Example: HW-125, Catalex, or any generic SPI SD reader
 4-pin version (GND, VCC, SDA, SCL)
 - WAV-compatible Bluetooth headphones or speakers
 ESP32 streams via A2DP sink mode
+
+
+## Step 1: Open the Calculator
