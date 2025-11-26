@@ -1,0 +1,263 @@
+/*
+  ESP32 Bluetooth WAV Player
+  -------------------------------------------
+  Volume NOW goes 0–100 in steps of 1
+  Startup volume = 0%
+*/
+
+#include <BluetoothA2DPSource.h>
+#include <FS.h>
+#include <SD.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+
+#define SD_CS      5
+#define OLED_ADDR  0x3C
+
+// Buttons
+#define BTN_UP     26
+#define BTN_DOWN   27
+#define BTN_NEXT   14
+#define BTN_PLAY   25
+
+BluetoothA2DPSource a2dp;
+Adafruit_SH1107 display(128, 128, &Wire);
+
+// ===== STATE =====
+
+// volumePercent is 0–100
+int volumePercent = 0;
+
+// internal gain 0.0–1.0
+float volumeGain = 0.0;
+
+bool loopMode = true;
+bool paused = false;
+bool playing = false;
+
+const int AUDIO_BUFFER_SIZE = 8192;
+int16_t audioBuffer[AUDIO_BUFFER_SIZE];
+volatile int rb_write = 0, rb_read = 0;
+File currentFile;
+const int MAX_SONGS = 64;
+String songList[MAX_SONGS];
+int songCount = 0;
+int currentSong = 0;
+
+bool showVolPopup = false;
+unsigned long volPopupTime = 0;
+
+// ============================================================
+// RING BUFFER + AUDIO CALLBACK
+// ============================================================
+int rb_avail_read() { int w = rb_write, r = rb_read; return (w >= r) ? (w - r) : (AUDIO_BUFFER_SIZE - r + w); }
+int rb_avail_write() { return AUDIO_BUFFER_SIZE - 1 - rb_avail_read(); }
+void rb_push(int16_t s) { audioBuffer[rb_write] = s; rb_write = (rb_write + 1) % AUDIO_BUFFER_SIZE; }
+int16_t rb_pop() { if (rb_avail_read() == 0) return 0; int16_t s = audioBuffer[rb_read]; rb_read = (rb_read + 1) % AUDIO_BUFFER_SIZE; return s; }
+
+int32_t bt_data(Frame *frames, int32_t frame_count) {
+  for (int i = 0; i < frame_count; i++) {
+    int16_t left = rb_pop();
+    int16_t right = rb_pop();
+
+    left = constrain((int32_t)(left * volumeGain), -32768, 32767);
+    right = constrain((int32_t)(right * volumeGain), -32768, 32767);
+
+    frames[i].channel1 = left;
+    frames[i].channel2 = right;
+  }
+  return frame_count;
+}
+
+// ============================================================
+// SD + FILE CONTROL
+// ============================================================
+void scanSongs() {
+  songCount = 0;
+  File root = SD.open("/");
+  while (true) {
+    File f = root.openNextFile();
+    if (!f) break;
+    if (!f.isDirectory()) {
+      String n = f.name(); n.toLowerCase();
+      if (n.endsWith(".wav") && songCount < MAX_SONGS)
+        songList[songCount++] = f.name();
+    }
+    f.close();
+  }
+  root.close();
+}
+
+bool openSong(int idx) {
+  if (currentFile) currentFile.close();
+  if (idx >= songCount) return false;
+  String path = "/" + songList[idx];
+  currentFile = SD.open(path, "r");
+  if (!currentFile) return false;
+  currentFile.seek(44, SeekSet);
+  playing = true;
+  return true;
+}
+
+// ============================================================
+// OLED DRAWING
+// ============================================================
+void drawCenteredText(const String &text, int y) {
+  int16_t x1, y1; uint16_t w, h;
+  display.getTextBounds(text, 0, y, &x1, &y1, &w, &h);
+  display.setCursor((128 - w) / 2, y);
+  display.print(text);
+}
+
+void drawPlayPause(bool paused, int cx, int cy, int size) {
+  if (paused) {
+    display.fillTriangle(cx - size/2, cy - size/2,
+                         cx - size/2, cy + size/2,
+                         cx + size/2, cy,
+                         SH110X_WHITE);
+  } else {
+    int barWidth = 10;
+    int gap = 6;
+    display.fillRect(cx - barWidth - gap/2, cy - size/2, barWidth, size, SH110X_WHITE);
+    display.fillRect(cx + gap/2, cy - size/2, barWidth, size, SH110X_WHITE);
+  }
+}
+
+void drawVolumeBar() {
+  if (!showVolPopup) return;
+
+  // Convert 0–100 to bar length
+  int barWidth = (volumePercent * 60) / 100;
+
+  display.drawRect(34, 100, 60, 8, SH110X_WHITE);
+  display.fillRect(34, 100, barWidth, 8, SH110X_WHITE);
+
+  display.setTextSize(1);
+  display.setCursor(100, 100);
+  display.print(volumePercent);
+}
+
+void drawUI() {
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+  display.setTextSize(1);
+
+  drawCenteredText("Record", 8);
+
+  int centerY = 64;
+  if (songCount > 0)
+    drawCenteredText(songList[currentSong], centerY - 30);
+  else
+    drawCenteredText("No songs found", centerY - 30);
+
+  drawPlayPause(paused, 64, centerY + 10, 40);
+  drawCenteredText(paused ? "Paused" : "Now Playing", 112);
+
+  drawVolumeBar();
+
+  display.display();
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(21, 22);
+  display.begin(OLED_ADDR, true);
+  display.clearDisplay();
+  display.display();
+
+  pinMode(BTN_UP, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_NEXT, INPUT_PULLUP);
+  pinMode(BTN_PLAY, INPUT_PULLUP);
+
+  SPI.begin(18, 19, 23, 5);
+  if (!SD.begin(SD_CS, SPI, 4000000)) {
+    display.setCursor(20, 60);
+    display.setTextColor(SH110X_WHITE);
+    display.print("SD init fail");
+    display.display();
+    while (1);
+  }
+
+  scanSongs();
+  openSong(currentSong);
+
+  a2dp.start("Airdopes 441", bt_data);
+  drawUI();
+}
+
+// ============================================================
+// LOOP
+// ============================================================
+void loop() {
+
+  // Feed audio
+  if (playing && !paused) {
+    int space = rb_avail_write();
+    space = (space / 2) * 2;
+    if (space >= 512) {
+      uint8_t tmp[1024];
+      int r = currentFile.read(tmp, 1024);
+      if (r > 0) {
+        int n = r / 2;
+        int16_t *p = (int16_t*)tmp;
+        for (int i = 0; i < n; i++) rb_push(p[i]);
+      } else if (loopMode) {
+        currentFile.seek(44, SeekSet);
+      } else {
+        currentSong = (currentSong + 1) % songCount;
+        openSong(currentSong);
+      }
+    }
+  }
+
+  // Volume Up
+  if (digitalRead(BTN_DOWN) == LOW) {
+    volumePercent++;
+    if (volumePercent > 100) volumePercent = 100;
+    volumeGain = volumePercent / 100.0;
+    showVolPopup = true;
+    volPopupTime = millis();
+    drawUI();
+    delay(100);
+  }
+
+  // Volume Down
+  if (digitalRead(BTN_UP) == LOW) {
+    volumePercent--;
+    if (volumePercent < 0) volumePercent = 0;
+    volumeGain = volumePercent / 100.0;
+    showVolPopup = true;
+    volPopupTime = millis();
+    drawUI();
+    delay(100);
+  }
+
+  // Next Song
+  if (digitalRead(BTN_NEXT) == LOW) {
+    currentSong = (currentSong + 1) % songCount;
+    openSong(currentSong);
+    drawUI();
+    delay(250);
+  }
+
+  // Play / Pause
+  if (digitalRead(BTN_PLAY) == LOW) {
+    paused = !paused;
+    drawUI();
+    delay(300);
+  }
+
+  // Hide popup after 1.5s
+  if (showVolPopup && millis() - volPopupTime > 1500) {
+    showVolPopup = false;
+    drawUI();
+  }
+
+  delay(1);
+}
