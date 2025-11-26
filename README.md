@@ -22,6 +22,11 @@ ESP32 streams via A2DP sink mode
 
 ### [Download the print here](https://github.com/ssohail-droid/Record.wav/tree/main/STL)
 
+<p align="center">
+  <img src="doc/Doc2.png" alt="Alt text" width="500">
+</p>
+
+
 ## Step 2: Wiring
 
 ### Complete Wiring Overview (Side-by-Side)
