@@ -45,3 +45,6 @@ ESP32 streams via A2DP sink mode
 
 ## Step 3: Programming
 
+### [Get the code here](https://github.com/ssohail-droid/Record.wav/blob/main/Code/BT-Code)
+
+- Upload the code from the Arduino IDE and flash it to the board.
