@@ -14,4 +14,6 @@ Example: HW-125, Catalex, or any generic SPI SD reader
 ESP32 streams via A2DP sink mode
 
 
-## Step 1: Open the Calculator
+## Step 1: Print the Case
+
+
