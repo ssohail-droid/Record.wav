@@ -37,3 +37,9 @@ ESP32 streams via A2DP sink mode
 ### [Get the code here](https://github.com/ssohail-droid/Record.wav/blob/main/Code/BT-Code)
 
 - Upload the code from the Arduino IDE and flash it to the board.
+
+## Step 4: Get the music
+
+- Disclaimer: This WAV player project does not support or encourage piracy. All audio used should be legally obtained.
+- This WAV player only supports `.wav` files. I personally like using this website:
+### [Here](https://www.freeconvert.com/mp3-to-wav)
