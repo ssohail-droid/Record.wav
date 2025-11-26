@@ -43,3 +43,5 @@ ESP32 streams via A2DP sink mode
 | Volume −   | GPIO27    | GND        |
 | Volume +   | GPIO26    | GND        |
 
+## Step 3: Programming
+
