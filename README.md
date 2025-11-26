@@ -20,28 +20,17 @@ ESP32 streams via A2DP sink mode
 
 ## Step 2: Wiring
 
-| ESP32 Pin | OLED Pin |
-| --------- | -------- |
-| 3.3V      | VCC      |
-| GND       | GND      |
-| GPIO21    | SDA      |
-| GPIO22    | SCL      |
+### Complete Wiring Overview (Side-by-Side)
 
-| ESP32 Pin | SD Module Pin |
-| --------- | ------------- |
-| GPIO5     | CS            |
-| GPIO18    | SCK           |
-| GPIO23    | MOSI          |
-| GPIO19    | MISO          |
-| 3.3V      | VCC           |
-| GND       | GND           |
+| OLED Wiring (ESP32 → OLED) | SD Module Wiring (ESP32 → SD) | Button Wiring (Function → Pin → GND) |
+| -------------------------- | ----------------------------- | ------------------------------------ |
+| 3.3V → VCC                 | GPIO5  → CS                   | Play/Pause → GPIO25 → GND            |
+| GND  → GND                 | GPIO18 → SCK                  | Next Track → GPIO14 → GND            |
+| GPIO21 → SDA               | GPIO23 → MOSI                 | Volume − → GPIO27 → GND              |
+| GPIO22 → SCL               | GPIO19 → MISO                 | Volume + → GPIO26 → GND              |
+|                            | 3.3V → VCC                    |                                      |
+|                            | GND → GND                     |                                      |
 
-| Function   | ESP32 Pin | Second Leg |
-| ---------- | --------- | ---------- |
-| Play/Pause | GPIO25    | GND        |
-| Next Track | GPIO14    | GND        |
-| Volume −   | GPIO27    | GND        |
-| Volume +   | GPIO26    | GND        |
 
 ## Step 3: Programming
 
