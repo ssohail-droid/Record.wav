@@ -17,3 +17,50 @@ ESP32 streams via A2DP sink mode
 ## Step 1: Print the Case
 
 
+                           ┌─────────────────────────┐
+                           │     ESP32 DEVKIT V1     │
+                           │                         │
+        3.3V  ─────────────┤3V3                  VIN ├──── (not used)
+        GND   ─────────────┤GND                  GND ├──────────────┐
+                           │                         │              │
+        SDA ───────────────┤GPIO21               IO23┤──── MOSI ----┼──── SD MOSI
+        SCL ───────────────┤GPIO22               IO19┤──── MISO ----┼──── SD MISO
+                           │                         │              │
+ SD CS  ───────────────────┤GPIO5                IO18┤──── SCK  ----┼──── SD SCK
+                           │                         │
+ BTN PLAY ────────┐        │                         │
+                  │   ┌────┤GPIO25               IO5 ┤──── SD CS
+                  │   │    │                         │
+ BTN NEXT ────────┼───┤GPIO14                      ┌─┤EN (ignore)
+                  │   │                            │
+ BTN VOL- ────────┼───┤GPIO27                      │
+                  │   │                            │
+ BTN VOL+ ────────┼───┤GPIO26                      │
+                  │   │                            │
+                  │   │                            │
+                  │   └────────────────────────────┘
+                  │
+                 GND (common ground for all buttons)
+
+
+──────────────────────────────────────
+ OLED (SH1107 128×128 I²C)
+──────────────────────────────────────
+ OLED VCC  ─────────── 3.3V  
+ OLED GND  ─────────── GND  
+ OLED SDA  ─────────── GPIO21  
+ OLED SCL  ─────────── GPIO22  
+
+
+──────────────────────────────────────
+ SD Card Module (SPI)
+──────────────────────────────────────
+ SD VCC   ─────────── 3.3V  
+ SD GND   ─────────── GND  
+ SD CS    ─────────── GPIO5  
+ SD SCK   ─────────── GPIO18  
+ SD MOSI  ─────────── GPIO23  
+ SD MISO  ─────────── GPIO19  
+
+
+
