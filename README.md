@@ -43,3 +43,14 @@ ESP32 streams via A2DP sink mode
 - Disclaimer: This WAV player project does not support or encourage piracy. All audio used should be legally obtained.
 - This WAV player only supports `.wav` files. I personally like using this website:
 ### [Here](https://www.freeconvert.com/mp3-to-wav)
+-Then upload the music onto the SD card.
+
+## Congratulations! You now have Record.wav!!!!!!.
+
+
+<p align="center">
+  <a href="https://example.com">
+    <img src="https://media.tenor.com/3_mXIoBPNhoAAAAi/party-parrot.gif" alt="Demo GIF">
+  </a>
+</p>
+
